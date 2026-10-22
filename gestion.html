@@ -72,9 +72,7 @@ th{font-size:12px;color:var(--mut);font-weight:500}tr.r{cursor:pointer}tr.r:hove
   <h3>Respaldo de datos</h3><p style="color:var(--mut);margin:0 0 8px">Tus datos se guardan en este navegador y dispositivo. Copia el respaldo y guárdalo (por ejemplo en tus notas) para no perderlo.</p>
   <div class="bar" style="margin-top:0"><button class="b" id="ex">Generar respaldo</button><button class="b" id="im">Restaurar respaldo</button></div><textarea id="bk" placeholder="Aquí aparece el respaldo; para restaurar, pega el texto y pulsa Restaurar." style="margin-top:8px"></textarea></div>
  <div class="card"><h2>Catálogo de servicios</h2><p style="color:var(--mut);margin:0 0 10px">Precios de ejemplo: ajústalos a los tuyos.</p><div id="cat"></div><div class="bar"><button class="b" id="ca">+ Agregar servicio</button></div></div>
- <div class="card" style="grid-column:1/-1"><h2>Guardar</h2><p style="color:var(--mut);margin:0 0 10px">Los registros se guardan, para verlos desde cualquier dispositivo.</p>
- <div class="g"><div><label>Usuario</label><input data-g="owner" placeholder="pablokooss"></div><div><label>Repositorio</label><input data-g="repo" placeholder="nexatech-datos"></div><div><label>Rama</label><input data-g="branch" placeholder="main"></div><div><label>Archivo</label><input data-g="path" placeholder="data/registros.json"></div><div><label>Token (fine-grained)</label><input data-g="token" type="password" autocomplete="off"></div></div>
- <div class="bar"><button class="b p" id="gc">Conectar y sincronizar</button><button class="b" id="gd">Desconectar</button></div></div>
+<button class="b" id="gd">Desconectar</button></div></div>
 </div></section>
 </div><div class="toast" id="ts"></div>
 
@@ -87,16 +85,16 @@ let S=load(),cur=null;
 const GK='nexatech_gh';const GHD={owner:'PabloKooss',repo:'nexatech-datos',branch:'main',path:'data/registros.json'};let GH=(()=>{try{return Object.assign({},GHD,JSON.parse(localStorage.getItem(GK)))}catch(e){return Object.assign({},GHD)}})();
 const ghOn=()=>GH.token&&GH.owner&&GH.repo,ghU=()=>`https://api.github.com/repos/${GH.owner}/${GH.repo}/contents/${GH.path||'data/registros.json'}`,ghH=()=>({Authorization:'Bearer '+GH.token,Accept:'application/vnd.github+json'});
 function banner(){$('#gb').classList.toggle('hid',!!ghOn())}
-async function connect(){if(!ghOn()){toast('Pega tu token de GitHub');return}
+async function connect(){if(!ghOn()){toast('Pega la clave');return}
  try{setSy('Conectando…');const r=await ghGet();
-  if(r&&r.data.docs){if(!S.docs.length||confirm('Hay '+r.data.docs.length+' registros en GitHub y '+S.docs.length+' en este dispositivo. Aceptar = cargar los de GitHub (reemplaza los de aquí). Cancelar = no cambiar nada.')){S=Object.assign(structuredClone(DEF),r.data);localStorage.setItem(KEY,JSON.stringify(S));list();toast('Registros cargados: '+S.docs.length)}}
+  if(r&&r.data.docs){if(!S.docs.length||confirm('Hay '+r.data.docs.length+' registros en GitHub y '+S.docs.length+' en este dispositivo. Aceptar = cargar (reemplaza los de aquí). Cancelar = no cambiar nada.')){S=Object.assign(structuredClone(DEF),r.data);localStorage.setItem(KEY,JSON.stringify(S));list();toast('Registros cargados: '+S.docs.length)}}
   else{await ghPush();toast('El repositorio estaba vacío: se subieron los registros de este dispositivo')}
-  setSy('✓ Sincronizado con GitHub');banner()
- }catch(e){setSy('⚠ Error GitHub ('+e.message+')');toast('No se pudo conectar: revisa el token (permiso Contents lectura y escritura sobre nexatech-datos)')}}
+  setSy('✓ Sincronizado');banner()
+ }catch(e){setSy('⚠ Error ('+e.message+')');toast('No se pudo conectar: revisa el token')}}
 function setSy(m){$('#sy').textContent=m}
 async function ghGet(){const r=await fetch(ghU()+'?ref='+encodeURIComponent(GH.branch||'main')+'&t='+Date.now(),{headers:ghH()});if(r.status===404)return null;if(!r.ok)throw new Error(r.status);const j=await r.json();return{sha:j.sha,data:JSON.parse(decodeURIComponent(escape(atob(j.content.replace(/\n/g,'')))))}}
 async function ghPush(){const c=await ghGet(),b={message:'Actualiza registros '+new Date().toISOString(),content:btoa(unescape(encodeURIComponent(JSON.stringify(S,null,1)))),branch:GH.branch||'main'};if(c)b.sha=c.sha;const r=await fetch(ghU(),{method:'PUT',headers:ghH(),body:JSON.stringify(b)});if(!r.ok)throw new Error(r.status)}
-let pt;function push(){if(!ghOn())return;clearTimeout(pt);setSy('Guardando en GitHub…');pt=setTimeout(async()=>{try{await ghPush();setSy('✓ Sincronizado con GitHub')}catch(e){setSy('⚠ Error GitHub ('+e.message+'): tus datos siguen en este dispositivo')}},1200)}
+let pt;function push(){if(!ghOn())return;clearTimeout(pt);setSy('Guardando…');pt=setTimeout(async()=>{try{await ghPush();setSy('✓ Sincronizado')}catch(e){setSy('⚠ Error ('+e.message+'): tus datos siguen en este dispositivo')}},1200)}
 function load(){try{const x=JSON.parse(localStorage.getItem(KEY));if(x)return Object.assign(structuredClone(DEF),x,{biz:Object.assign({},DEF.biz,x.biz)})}catch(e){}return structuredClone(DEF)}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){toast('No se pudo guardar en este navegador')}push()}
 function toast(m){const t=$('#ts');t.textContent=m;t.style.display='block';clearTimeout(t._t);t._t=setTimeout(()=>t.style.display='none',2600)}
